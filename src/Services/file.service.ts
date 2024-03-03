@@ -5,6 +5,7 @@ import { File } from '../model/file.model';
 import { readdir, stat } from 'fs/promises';
 import { join } from 'path';
 import { mkdir } from 'fs/promises';
+import { createReadStream, existsSync, readFile } from 'fs';
 
 @Injectable()
 export class FileService {
@@ -15,6 +16,10 @@ export class FileService {
 
   async findAll(): Promise<File[]> {
     return this.fileRepository.find();
+  }
+
+  async findById(id: number): Promise<File> {
+    return this.fileRepository.findOne({ where: { id } });
   }
 
   async uploadFile(file, folder: string): Promise<File> {
@@ -59,8 +64,19 @@ export class FileService {
     }
   }
 
-  async downloadFile(id: number): Promise<File> {
-    return this.fileRepository.findOne({ where: { id } });
+  async downloadFile(id: number): Promise<Buffer> {
+    const file = await this.fileRepository.findOne({ where: { id } });
+    const filePath = file.path;
+
+    return new Promise((resolve, reject) => {
+      readFile(filePath, (err, data) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(data);
+        }
+      });
+    });
   }
 
   async deleteFile(id: number): Promise<void> {

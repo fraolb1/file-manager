@@ -6,11 +6,14 @@ import {
   UploadedFile,
   UseInterceptors,
   Delete,
+  Res,
+  NotFoundException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileService } from '../services/file.service';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { Response } from 'express';
 
 @Controller('files')
 export class FileController {
@@ -62,11 +65,28 @@ export class FileController {
     return this.fileService.listFilesInFolder(folderName.replace(':', ''));
   }
 
-  @Get(':id')
-  async downloadFile(@Param('id') id: string) {
-    const identification = parseInt(id.replace(':', ''));
-    const file = await this.fileService.downloadFile(identification);
-    return { file };
+  @Get(':filename')
+  async downloadFile(
+    @Param('id') id: number,
+    @Res() res: Response,
+  ): Promise<void> {
+    try {
+      const fileBuffer = await this.fileService.downloadFile(id);
+      const file = await this.fileService.findById(id);
+
+      if (!fileBuffer) {
+        throw new NotFoundException('File not found');
+      }
+
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${file.filename}"`,
+      );
+      res.send(fileBuffer);
+    } catch (err) {
+      throw new NotFoundException('File not found');
+    }
   }
 
   @Delete(':id')
