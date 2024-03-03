@@ -65,7 +65,7 @@ export class FileController {
     return this.fileService.listFilesInFolder(folderName.replace(':', ''));
   }
 
-  @Get(':filename')
+  @Get(':id')
   async downloadFile(
     @Param('id') id: number,
     @Res() res: Response,

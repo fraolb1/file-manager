@@ -32,7 +32,11 @@ export class FileService {
 
   async createFolder(folderName: string): Promise<void> {
     const folderPath = join('./uploads', folderName);
+
     try {
+      if (existsSync(folderPath)) {
+        throw new Error('folder with that name already exists');
+      }
       await mkdir(folderPath, { recursive: true });
     } catch (error) {
       throw new Error(`Failed to create folder: ${error.message}`);
