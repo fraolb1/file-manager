@@ -17,11 +17,11 @@ export class FileService {
     return this.fileRepository.find();
   }
 
-  async uploadFile(file): Promise<File> {
+  async uploadFile(file, folder: string): Promise<File> {
     const newFile = new File();
     newFile.filename = file.filename;
     newFile.path = file.path;
-    newFile.folder = file.folder;
+    newFile.folder = folder;
     return this.fileRepository.save(newFile);
   }
 
@@ -34,11 +34,26 @@ export class FileService {
     }
   }
 
-  async listFilesInFolder(folderName: string): Promise<string[]> {
+  async listFilesInFolder(folderName: string): Promise<any[]> {
     const folderPath = join('./uploads', folderName);
     try {
       const files = await readdir(folderPath);
-      return files;
+      const fileDetails = [];
+      for (const file of files) {
+        const filePath = join(folderPath, file);
+        const fileStat = await stat(filePath);
+        const fileInfo = await this.fileRepository.findOne({
+          where: { filename: file },
+        });
+        fileDetails.push({
+          id: fileInfo.id,
+          filename: file,
+          size: fileStat.size,
+          created_at: fileStat.birthtime,
+          modified_at: fileStat.mtime,
+        });
+      }
+      return fileDetails;
     } catch (error) {
       throw new Error(`Failed to list files in folder: ${error.message}`);
     }
